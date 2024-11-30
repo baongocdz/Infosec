@@ -10,6 +10,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Serilog;
 
 namespace DragonAcc.Service.Services
 {
@@ -37,16 +38,24 @@ namespace DragonAcc.Service.Services
 
         public async Task<ApiResult> Login(LoginModel model)
         {
+            Log.Information("Login attempt started for user: {Username}", model.UserName);
             try
             {
                 var user = await _userManager.FindByNameAsync(model.UserName);
 
                 if (user != null && !user.DeleteDate.HasValue)
                 {
-                    var signInResult = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, false, lockoutOnFailure: false);
+                    if (await _userManager.IsLockedOutAsync(user))
+                    {
+                        return new ApiResult()
+                        {
+                            Message = "Your account is locked. Please try again later."
+                        };
+                    }
+
+                    var signInResult = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, false, lockoutOnFailure: true);
                     if (signInResult.Succeeded)
                     {
-
                         var role = await _userManager.GetRolesAsync(user);
                         var roleString = String.Join(",", role.ToArray());
                         var tokenResult = GenerateUserToken(user, roleString);
@@ -58,18 +67,30 @@ namespace DragonAcc.Service.Services
                             };
                         }
                     }
+                    else
+                    {
+                        if (signInResult.IsLockedOut)
+                        {
+                            return new ApiResult()
+                            {
+                                Message = "Your account has been locked due to too many failed login attempts. Please try again later."
+                            };
+                        }
+                    }
                 }
 
                 return new ApiResult()
                 {
-                    Message = "Unorthorize",
+                    Message = "Invalid login attempt.",
                 };
             }
             catch (Exception e)
             {
+                Log.Error("Error occurred during login: {Message}", e.Message);
                 throw new Exception(e.ToString());
             }
         }
+
         public async Task<ApiResult> LoginAsAdmin(LoginModel model)
         {
             try
