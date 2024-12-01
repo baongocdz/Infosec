@@ -48,6 +48,7 @@
             placeholder="Enter your password"
             required
           />
+          <p v-if="passwordWarning" class="error-message">{{ passwordWarning }}</p>
         </div>
   
         <div class="form-group">
@@ -77,7 +78,8 @@
   
   <script>
   import api from '@/api/base.api';
-  
+  import DOMPurify from 'dompurify';
+
   export default {
     name: "RegistrationForm",
     data() {
@@ -89,45 +91,66 @@
         confirmPassword: "",
         errorMessage: "",
         successMessage: "",
+        passwordWarning: "",
       };
     },
     methods: {
-  async registerUser() {
-    this.errorMessage = "";
-    this.successMessage = "";
+      async registerUser() {
+        this.errorMessage = "";
+        this.successMessage = "";
+        this.passwordWarning = "";
 
-    if (this.password !== this.confirmPassword) {
-      this.errorMessage = "Passwords do not match";
-      return;
-    }
-    try {
-      const response = await api.register(
-        this.accountName,
-        this.password,
-        this.fullName,
-        this.email
-      );
-      this.successMessage = "Registration successful!";
-      this.clearForm();
-    } catch (error) {
-      if (error.response) {
-        this.errorMessage = error.response.data.message || "Registration failed. Please try again.";
-      } else {
-        this.errorMessage = "An unexpected error occurred. Please try again.";
+        if (!this.isPasswordValid(this.password)) {
+          this.passwordWarning = "Mật khẩu phải bao gồm kí tự in hoa, số và kí tự đặc biệt";
+          return;
+        }
+
+        const sanitizedAccountName = DOMPurify.sanitize(this.accountName);
+        const sanitizedEmail = DOMPurify.sanitize(this.email);
+        const sanitizedFullName = DOMPurify.sanitize(this.fullName);
+        const sanitizedPassword = DOMPurify.sanitize(this.password);
+        const sanitizedConfirmPassword = DOMPurify.sanitize(this.confirmPassword);
+
+        if (sanitizedPassword !== sanitizedConfirmPassword) {
+          this.errorMessage = "Passwords do not match";
+          return;
+        }
+
+        try {
+          const response = await api.register(
+            sanitizedAccountName,
+            sanitizedPassword,
+            sanitizedFullName,
+            sanitizedEmail
+          );
+          this.successMessage = "Registration successful!";
+          this.clearForm();
+        } catch (error) {
+          if (error.response) {
+            this.errorMessage = error.response.data.message || "Registration failed. Please try again.";
+          } else {
+            this.errorMessage = "An unexpected error occurred. Please try again.";
+          }
+        }
+      },
+
+      isPasswordValid(password) {
+        const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$/;
+        return regex.test(password);
+      },
+
+      clearForm() {
+        this.accountName = "";
+        this.email = "";
+        this.fullName = "";
+        this.password = "";
+        this.confirmPassword = "";
       }
     }
-  },
-
-  clearForm() {
-    this.accountName = "";
-    this.email = "";
-    this.fullName = "";
-    this.password = "";
-    this.confirmPassword = "";
-  }
-}
   };
-  </script>
+</script>
+
+
   
   <style scoped>
   .registration-container {

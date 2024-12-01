@@ -51,7 +51,7 @@ router.beforeEach((to, from, next) => {
   const isAdmin = store.user?.userName === 'Admin';
   if (to.path.startsWith('/admin')) {
 if (!isAdmin) {
-  alert("Tao đố mày vào được luôn");
+  alert("Không vào được đâu hehehe");
       return next({ name: 'home' });
     }
   }

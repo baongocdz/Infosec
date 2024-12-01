@@ -2,11 +2,11 @@
   <LoadingSpinner :isLoading="loading" />
   <div class="login-container">
     <div class="login-card">
-      <img class="image-Logo" src="../assets/LogoWebsite.png">
+      <img class="image-Logo" src="../assets/LogoWebsite.png" />
       <h3>Login</h3>
       <form @submit.prevent="handleLogin">
         <div class="input-group">
-          <input  placeholder="Tên tài khoản" v-model="userName"  required />
+          <input placeholder="Tên tài khoản" v-model="userName" required />
         </div>
         <div class="input-group">
           <input type="password" placeholder="Mật khẩu" v-model="password" required />
@@ -14,7 +14,7 @@
         <div class="forgot-password">
           <a href="#">Forgot Password?</a>
         </div>
-        <button type="submit"  class="sign-in-btn">Sign in</button>
+        <button type="submit" class="sign-in-btn">Sign in</button>
         <div class="or-container">
           <span>or continue with</span>
         </div>
@@ -43,6 +43,8 @@ import { useRouter } from "vue-router";
 import Cookies from "js-cookie";
 import authApi from "@/api/authenticate.api";
 import { userStore } from "../stores/auth";
+import DOMPurify from 'dompurify';
+
 export default defineComponent({
   setup() {
     const user = userStore();
@@ -50,18 +52,24 @@ export default defineComponent({
     const password = ref("");   
     const router = useRouter();
     const loading = ref(true);
+
     const fetchData = async () => {
       loading.value = true;
       await new Promise((resolve) => setTimeout(resolve, 2000));
       loading.value = false;
     };
+
     const handleLogin = async () => {
       if (userName.value && password.value) {
         try {
+          const sanitizedUserName = DOMPurify.sanitize(userName.value);
+          const sanitizedPassword = DOMPurify.sanitize(password.value);
+
           const loginModel = {
-            userName: userName.value,
-            password: password.value,
+            userName: sanitizedUserName,
+            password: sanitizedPassword,
           };
+
           const response = await authApi.login(loginModel);
           if (response && response.result?.isSuccess) {
             user.login({
@@ -76,9 +84,8 @@ export default defineComponent({
             localStorage.setItem('token', response.result.data.token);
             router.push("/");
             setTimeout(() => {
-          window.location.reload();
-        }, 100);
-            
+              window.location.reload();
+            }, 100);
           } else {
             alert("Invalid username or password.");
           }
@@ -90,9 +97,11 @@ export default defineComponent({
         alert("Username and password cannot be empty.");
       }
     };
+
     onMounted(async () => {
-    fetchData();
+      fetchData();
     });
+
     return {
       userName,
       password,
@@ -106,7 +115,7 @@ export default defineComponent({
 <style scoped>
 .image-Logo {
   width: 50px;
-  height: auto; 
+  height: auto;
   margin-bottom: 20px;
 }
 .login-container {

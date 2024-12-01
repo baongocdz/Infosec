@@ -5,7 +5,6 @@
     <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <form @submit.prevent="handleSubmit">
-      <!-- Tên Ngân Hàng -->
       <div class="form-group">
         <label for="nameBank">Tên Ngân Hàng</label>
         <div class="input-group">
@@ -19,7 +18,6 @@
         </div>
       </div>
 
-      <!-- Số Tài Khoản Ngân Hàng -->
       <div class="form-group">
         <label for="numberBank">Số Tài Khoản Ngân Hàng</label>
         <div class="input-group">
@@ -28,7 +26,6 @@
         </div>
       </div>
 
-      <!-- Số Tiền Rút -->
       <div class="form-group">
         <label for="amount">Số Tiền Rút</label>
         <div class="input-group">
